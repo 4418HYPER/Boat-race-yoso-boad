@@ -4,24 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- iPad アプリ化設定 -->
+    <!-- 1. PWA設定：これがあるもんでアプリっぽく動くんだわ -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="展開予想">
 
-    <!-- アイコン設定：ここをGitHubの実際のファイル名に合わせてください -->
-    <!-- JPEGを使用する場合は href="icon.jpeg" または "icon.jpg" に変更 -->
-    <link rel="apple-touch-icon" href="icon.png?v=999">
+    <!-- 2. アイコン設定：ここが肝心だに！ -->
+    <!-- あなたのGitHubユーザー名とリポジトリ名に合わせて、URLを「絶対パス」で書くのがコツだわ -->
+    <!-- 以下の「4418hyper」と「Boat-race-board」の部分が自分のものと合っとるか確認してね -->
+    <link rel="apple-touch-icon" href="https://4418hyper.github.io/Boat-race-board/app-icon.png">
+    <link rel="icon" type="image/png" href="https://4418hyper.github.io/Boat-race-board/app-icon.png">
+    
+    <!-- 念のためマニフェストも絶対パスで -->
+    <link rel="manifest" href="https://4418hyper.github.io/Boat-race-board/manifest.json">
 
     <title>ボートレース展開予想ボード</title>
-    <!-- 以降、以前のスタイルとスクリプト（50M表示なし・密集配置・リセット修正済み）が続きます -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background-color: #87CEEB; font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; touch-action: none; padding-bottom: env(safe-area-inset-bottom); }
         #canvas-container { width: 100vw; height: 100vh; position: relative; }
         .boat-container { position: absolute; width: 80px; height: 40px; cursor: move; display: flex; align-items: center; justify-content: center; touch-action: none; user-select: none; z-index: 50; }
-        .rotate-handle { position: absolute; right: -40px; width: 36px; height: 36px; background: rgba(255, 255, 255, 0.95); border: 2px solid #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: grab; z-index: 60; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .rotate-handle::after { content: '↻'; font-size: 20px; font-weight: bold; color: #1a1a1a; }
+        .rotate-handle { position: absolute; right: -42px; width: 38px; height: 38px; background: rgba(255, 255, 255, 0.95); border: 2px solid #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: grab; z-index: 60; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+        .rotate-handle::after { content: '↻'; font-size: 22px; font-weight: bold; color: #1a1a1a; }
         .start-line { position: absolute; left: 240px; top: 5%; bottom: 5%; width: 6px; background-color: #2563eb; z-index: 5; opacity: 0.8; }
         .mark-unit { position: absolute; left: 72%; top: 42%; display: flex; align-items: center; transform: translate(-50%, -50%) rotate(-10deg); z-index: 10; }
         .anti-turn-fence { width: 140px; height: 12px; background-color: #2563eb; border-radius: 3px 0 0 3px; }
@@ -39,6 +43,7 @@
         <div class="big-clock"></div>
     </div>
     <div class="controls"><button class="reset-btn" onclick="resetBoats()">リセット</button></div>
+
     <script>
         const container = document.getElementById('canvas-container');
         const boatSpecs = [
@@ -56,6 +61,7 @@
         const TIGHT_SPACING = 44;
         const BOTTOM_PADDING = 80;
         const START_X = 80;
+
         function initBoats() {
             const h = window.innerHeight;
             boatSpecs.forEach((spec) => {
