@@ -4,43 +4,178 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- iPad/iPhone アプリ化設定 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="展開予想">
 
-    <!-- キャッシュを強制回避するためのパラメータ(?v=3)を追加 -->
-    <link rel="apple-touch-icon" href="icon.png?v=3">
-    <link rel="icon" type="image/png" href="icon.png?v=3">
+    <!-- アイコン設定（キャッシュ回避のためバージョンを付与） -->
+    <link rel="apple-touch-icon" href="icon.png?v=4">
+    <link rel="icon" type="image/png" href="icon.png?v=4">
 
     <title>ボートレース展開予想ボード</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #87CEEB; touch-action: none; padding-bottom: env(safe-area-inset-bottom); }
-        #canvas-container { width: 100vw; height: 100vh; position: relative; }
-        .boat-container { position: absolute; width: 80px; height: 40px; cursor: move; display: flex; align-items: center; justify-content: center; touch-action: none; user-select: none; z-index: 50; }
-        .rotate-handle { position: absolute; right: -40px; width: 36px; height: 36px; background: rgba(255, 255, 255, 0.95); border: 2px solid #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 60; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        .rotate-handle::after { content: '↻'; font-size: 20px; font-weight: bold; color: #1a1a1a; }
-        .start-line { position: absolute; left: 240px; top: 5%; bottom: 5%; width: 6px; background-color: #2563eb; z-index: 5; opacity: 0.8; }
-        .mark-unit { position: absolute; left: 72%; top: 42%; display: flex; align-items: center; transform: translate(-50%, -50%) rotate(-10deg); z-index: 10; }
-        .anti-turn-fence { width: 140px; height: 12px; background-color: #2563eb; border-radius: 3px 0 0 3px; }
-        .buoy-head { width: 28px; height: 28px; background: conic-gradient(#fff 0 45deg, #cc0000 0 90deg, #fff 0 135deg, #cc0000 0 180deg, #fff 0 225deg, #cc0000 0 270deg, #fff 0 315deg, #cc0000 0 360deg); border-radius: 50%; border: 2px solid #000; margin-left: -1px; }
-        .big-clock { position: absolute; left: 200px; bottom: 60px; width: 65px; height: 65px; background: #111; border-radius: 50%; border: 4px solid #ff8c00; z-index: 10; }
-        .big-clock::before { content: ''; position: absolute; left: 50%; bottom: 50%; width: 3.5px; height: 30px; background: #fff; transform-origin: bottom; transform: translateX(-50%) rotate(40deg); }
-        .distance-marker { position: absolute; bottom: 45px; left: 45%; color: white; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); pointer-events: none; }
-        .controls { position: fixed; top: env(safe-area-inset-top, 25px); right: 25px; z-index: 100; }
-        .reset-btn { background: white; padding: 12px 24px; border-radius: 30px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 1px solid #999; cursor: pointer; user-select: none; }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #87CEEB; /* 水面の色 */
+            font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            touch-action: none;
+            /* iPadOSのセーフエリア対応 */
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* 艇コンテナ */
+        .boat-container {
+            position: absolute;
+            width: 80px;
+            height: 40px;
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+            user-select: none;
+            z-index: 50;
+        }
+
+        /* 回転ハンドル */
+        .rotate-handle {
+            position: absolute;
+            right: -40px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            z-index: 60;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .rotate-handle::after {
+            content: '↻';
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+
+        /* スタートライン */
+        .start-line {
+            position: absolute;
+            left: 240px;
+            top: 5%;
+            bottom: 5%;
+            width: 6px;
+            background-color: #2563eb;
+            z-index: 5;
+            opacity: 0.8;
+        }
+
+        /* 1マークユニット (フェンスとブイ一直線) */
+        .mark-unit {
+            position: absolute;
+            left: 72%; 
+            top: 42%;
+            display: flex;
+            align-items: center;
+            transform: translate(-50%, -50%) rotate(-10deg);
+            z-index: 10;
+        }
+
+        .anti-turn-fence {
+            width: 140px;
+            height: 12px;
+            background-color: #2563eb;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .buoy-head {
+            width: 28px;
+            height: 28px;
+            background: conic-gradient(#fff 0 45deg, #cc0000 0 90deg, #fff 0 135deg, #cc0000 0 180deg, #fff 0 225deg, #cc0000 0 270deg, #fff 0 315deg, #cc0000 0 360deg);
+            border-radius: 50%;
+            border: 2px solid #000;
+            margin-left: -1px;
+        }
+
+        /* 大時計 */
+        .big-clock {
+            position: absolute;
+            left: 200px;
+            bottom: 60px;
+            width: 65px;
+            height: 65px;
+            background: #111;
+            border-radius: 50%;
+            border: 4px solid #ff8c00;
+            z-index: 10;
+        }
+        .big-clock::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            width: 3.5px;
+            height: 30px;
+            background: #fff;
+            transform-origin: bottom;
+            transform: translateX(-50%) rotate(40deg);
+        }
+
+        /* UIコントロール */
+        .controls {
+            position: fixed;
+            top: env(safe-area-inset-top, 25px);
+            right: 25px;
+            z-index: 100;
+        }
+
+        .reset-btn {
+            background: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: 1px solid #999;
+            cursor: pointer;
+            user-select: none;
+        }
+        .reset-btn:active { background-color: #f0f0f0; transform: scale(0.95); }
     </style>
 </head>
 <body>
+
     <div id="canvas-container">
+        <!-- 競技環境パーツ -->
         <div class="start-line"></div>
-        <div class="mark-unit"><div class="anti-turn-fence"></div><div class="buoy-head"></div></div>
+        <div class="mark-unit">
+            <div class="anti-turn-fence"></div>
+            <div class="buoy-head"></div>
+        </div>
         <div class="big-clock"></div>
-        <div class="distance-marker">50M</div>
+        <!-- 50M表示を削除しました -->
     </div>
-    <div class="controls"><button class="reset-btn" onclick="resetBoats()">リセット</button></div>
+
+    <div class="controls">
+        <button class="reset-btn" onclick="resetBoats()">リセット</button>
+    </div>
+
     <script>
         const container = document.getElementById('canvas-container');
+
+        // ボート設定 (ヘルメット同色)
         const boatSpecs = [
             { id: 1, body: '#FFFFFF', accent: '#FFFFFF', text: '#000000' },
             { id: 2, body: '#1a1a1a', accent: '#1a1a1a', text: '#FFFFFF' },
@@ -49,10 +184,13 @@
             { id: 5, body: '#fbbf24', accent: '#fbbf24', text: '#000000' },
             { id: 6, body: '#166534', accent: '#166534', text: '#FFFFFF' }
         ];
+
         let boatStates = {};
         let activeId = null;
         let isRotating = false;
         let dragOffset = { x: 0, y: 0 };
+
+        // 密集配置定数
         const TIGHT_SPACING = 44;
         const BOTTOM_PADDING = 80;
         const START_X = 80;
@@ -63,49 +201,96 @@
                 const id = spec.id;
                 const startY = h - BOTTOM_PADDING - (6 - id) * TIGHT_SPACING;
                 boatStates[id] = { x: START_X, y: startY, rot: 0 };
+
                 const el = document.createElement('div');
                 el.className = 'boat-container';
                 el.id = `boat-${id}`;
-                el.innerHTML = `<svg width="70" height="35" viewBox="0 0 100 50"><rect x="2" y="16" width="12" height="18" fill="#4b5563" rx="1" /><path d="M14 10 L75 10 L96 25 L75 40 L14 40 Z" fill="${spec.body}" stroke="#000" stroke-width="2.5" /><circle cx="35" cy="25" r="9.5" fill="${spec.accent}" stroke="#000" stroke-width="1.5" /><text x="65" y="32" font-family="Arial" font-weight="bold" font-size="22" fill="${spec.text}" text-anchor="middle">${id}</text></svg><div class="rotate-handle" data-id="${id}"></div>`;
+                
+                el.innerHTML = `
+                    <svg width="70" height="35" viewBox="0 0 100 50">
+                        <rect x="2" y="16" width="12" height="18" fill="#4b5563" rx="1" />
+                        <path d="M14 10 L75 10 L96 25 L75 40 L14 40 Z" fill="${spec.body}" stroke="#000" stroke-width="2.5" />
+                        <circle cx="35" cy="25" r="9.5" fill="${spec.accent}" stroke="#000" stroke-width="1.5" />
+                        <text x="65" y="32" font-family="Arial" font-weight="bold" font-size="22" fill="${spec.text}" text-anchor="middle">${id}</text>
+                    </svg>
+                    <div class="rotate-handle" data-id="${id}"></div>
+                `;
+
                 container.appendChild(el);
                 updateBoatTransform(id);
+
                 el.addEventListener('mousedown', (e) => startInteraction(e, e));
                 el.addEventListener('touchstart', (e) => startInteraction(e.touches[0], e), {passive: false});
             });
         }
+
         function updateBoatTransform(id) {
             const s = boatStates[id];
             const el = document.getElementById(`boat-${id}`);
             if (el) el.style.transform = `translate(${s.x}px, ${s.y}px) rotate(${s.rot}deg)`;
         }
+
         function startInteraction(pointer, e) {
             if (e && e.cancelable) e.preventDefault();
+            
             const handle = e.target.closest('.rotate-handle');
             const boat = e.target.closest('.boat-container');
-            if (handle) { isRotating = true; activeId = handle.dataset.id; }
-            else if (boat) { activeId = boat.id.split('-')[1]; isRotating = false; dragOffset.x = pointer.clientX - boatStates[activeId].x; dragOffset.y = pointer.clientY - boatStates[activeId].y; }
+            
+            if (handle) {
+                isRotating = true;
+                activeId = handle.dataset.id;
+            } else if (boat) {
+                activeId = boat.id.split('-')[1];
+                isRotating = false;
+                dragOffset.x = pointer.clientX - boatStates[activeId].x;
+                dragOffset.y = pointer.clientY - boatStates[activeId].y;
+            }
+
             const moveHandler = (moveEvent) => {
                 const p = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
                 if (!activeId) return;
+
                 if (isRotating) {
                     const el = document.getElementById(`boat-${activeId}`);
                     const rect = el.getBoundingClientRect();
                     const cx = rect.left + rect.width / 2;
                     const cy = rect.top + rect.height / 2;
-                    boatStates[activeId].rot = Math.atan2(p.clientY - cy, p.clientX - cx) * (180 / Math.PI);
-                } else { boatStates[activeId].x = p.clientX - dragOffset.x; boatStates[activeId].y = p.clientY - dragOffset.y; }
+                    const angle = Math.atan2(p.clientY - cy, p.clientX - cx);
+                    boatStates[activeId].rot = angle * (180 / Math.PI);
+                } else {
+                    boatStates[activeId].x = p.clientX - dragOffset.x;
+                    boatStates[activeId].y = p.clientY - dragOffset.y;
+                }
                 updateBoatTransform(activeId);
             };
-            const endHandler = () => { activeId = null; window.removeEventListener('mousemove', moveHandler); window.removeEventListener('mouseup', endHandler); window.removeEventListener('touchmove', moveHandler); window.removeEventListener('touchend', endHandler); };
-            window.addEventListener('mousemove', moveHandler); window.addEventListener('mouseup', endHandler); window.addEventListener('touchmove', moveHandler, {passive: false}); window.addEventListener('touchend', endHandler);
+
+            const endHandler = () => {
+                activeId = null;
+                window.removeEventListener('mousemove', moveHandler);
+                window.removeEventListener('mouseup', endHandler);
+                window.removeEventListener('touchmove', moveHandler);
+                window.removeEventListener('touchend', endHandler);
+            };
+
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('mouseup', endHandler);
+            window.addEventListener('touchmove', moveHandler, {passive: false});
+            window.addEventListener('touchend', endHandler);
         }
+
         function resetBoats() {
             const h = window.innerHeight;
             boatSpecs.forEach((spec) => {
-                boatStates[spec.id] = { x: START_X, y: h - BOTTOM_PADDING - (6 - spec.id) * TIGHT_SPACING, rot: 0 };
-                updateBoatTransform(spec.id);
+                const id = spec.id;
+                boatStates[id] = {
+                    x: START_X,
+                    y: h - BOTTOM_PADDING - (6 - id) * TIGHT_SPACING,
+                    rot: 0
+                };
+                updateBoatTransform(id);
             });
         }
+
         window.onload = initBoats;
         window.addEventListener('resize', resetBoats);
     </script>
