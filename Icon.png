@@ -1,0 +1,21 @@
+const result = await fetch("https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=", {
+  method: "POST",
+  body: JSON.stringify({
+    instances: {
+      prompt: "A professional, minimalist square app icon for a boat racing simulation. Features a stylized silhouette of a racing boat speed on blue water. High-end, vibrant blue and white color scheme, flat modern design, sleek lines.",
+    },
+    parameters: {
+      sampleCount: 1
+    }
+  })
+});
+const data = await result.json();
+const iconUrl = `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+
+// 画面に表示
+const img = document.createElement('img');
+img.src = iconUrl;
+img.style.width = "200px";
+img.style.borderRadius = "20px";
+document.body.appendChild(img);
+
